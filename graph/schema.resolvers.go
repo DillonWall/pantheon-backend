@@ -10,14 +10,24 @@ import (
 	"pantheon-auth/graph/model"
 )
 
-// CreateTodo is the resolver for the createTodo field.
-func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
+// Register is the resolver for the register field.
+func (r *mutationResolver) Register(ctx context.Context, input model.UserData) (string, error) {
+	panic(fmt.Errorf("not implemented: Register - register"))
 }
 
-// Todos is the resolver for the todos field.
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: Todos - todos"))
+// Login is the resolver for the login field.
+func (r *mutationResolver) Login(ctx context.Context, input model.UserData) (string, error) {
+	panic(fmt.Errorf("not implemented: Login - login"))
+}
+
+// Verify is the resolver for the verify field.
+func (r *mutationResolver) Verify(ctx context.Context, token string) (string, error) {
+	panic(fmt.Errorf("not implemented: Verify - verify"))
+}
+
+// User is the resolver for the user field.
+func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
+	panic(fmt.Errorf("not implemented: User - user"))
 }
 
 // Mutation returns MutationResolver implementation.
