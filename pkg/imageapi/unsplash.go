@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"pantheon-auth/graph/model"
 )
@@ -41,9 +42,10 @@ type UnsplashPhotoResult struct {
 
 func (c *UnsplashClient) SearchSingleImage(ctx context.Context, query string) (*model.Image, error) {
 	// GET first photo from search
+    encodedQuery := url.QueryEscape(query)
 	req, err := http.NewRequestWithContext(ctx, "GET",
 		fmt.Sprintf("https://api.unsplash.com/search/photos?query=%s&client_id=%s&per_page=%s",
-			query, c.apiKey, "1"), nil)
+			encodedQuery, c.apiKey, "1"), nil)
 	if err != nil {
 		return nil, err
 	}
