@@ -12,8 +12,12 @@ input UserData {
   password: String!
 }
 
+type AuthResponse {
+  token: String
+}
+
 type Mutation {
-  register(input: UserData!): String!
-  login(input: UserData!): String!
-  verify(token: String!): String!
+  register(input: UserData!): AuthResponse!
+  login(input: UserData!): AuthResponse!
+  verify(token: String!): Boolean!
 }

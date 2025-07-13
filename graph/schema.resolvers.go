@@ -7,27 +7,68 @@ package graph
 import (
 	"context"
 	"fmt"
+	"os"
 	"pantheon-auth/graph/model"
+	"strconv"
+	"time"
+
+	jwt "github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Register is the resolver for the register field.
-func (r *mutationResolver) Register(ctx context.Context, input model.UserData) (string, error) {
-	panic(fmt.Errorf("not implemented: Register - register"))
+func (r *mutationResolver) Register(ctx context.Context, input model.UserData) (*model.AuthResponse, error) {
+	// todo: validation
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to hash the password: %w", err)
+	}
+
+	user := &model.User{
+		Username:     input.Username,
+		Passwordhash: string(hashedPassword),
+	}
+	r.users = append(r.users, user)
+
+	// Generate a JWT token
+	tokenExpireTimeHours, err := strconv.Atoi(os.Getenv("TOKEN_EXPIRE_TIME_HOURS"))
+	if err != nil {
+		return nil, fmt.Errorf("Server environment variable error: %w", err)
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Hour * time.Duration(tokenExpireTimeHours)).Unix(),
+	})
+
+	// Sign the token with the secret key
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to generate JWT token: %w", err)
+	}
+
+	return &model.AuthResponse{
+		Token: &tokenString,
+	}, nil
 }
 
 // Login is the resolver for the login field.
-func (r *mutationResolver) Login(ctx context.Context, input model.UserData) (string, error) {
+func (r *mutationResolver) Login(ctx context.Context, input model.UserData) (*model.AuthResponse, error) {
 	panic(fmt.Errorf("not implemented: Login - login"))
 }
 
 // Verify is the resolver for the verify field.
-func (r *mutationResolver) Verify(ctx context.Context, token string) (string, error) {
+func (r *mutationResolver) Verify(ctx context.Context, token string) (bool, error) {
 	panic(fmt.Errorf("not implemented: Verify - verify"))
 }
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	user := &model.User{
+		Username:     "exampleuser",
+		Passwordhash: "hashedpassword",
+	}
+	return user, nil
 }
 
 // Mutation returns MutationResolver implementation.
