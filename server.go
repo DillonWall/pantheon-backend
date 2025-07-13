@@ -33,12 +33,13 @@ func main() {
 
 	unsplashClient := imageapi.NewUnsplashClient()
 	pixabayClient := imageapi.NewPixabayClient()
+	storyblocksClient := imageapi.NewStoryblocksClient()
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
 		UserRepo: &auth.UserRepository{
 			Users: make([]*model.User, 0),
 		},
-		ImageAPIs: []imageapi.API{unsplashClient, pixabayClient},
+		ImageAPIs: []imageapi.API{unsplashClient, pixabayClient, storyblocksClient},
 	}}))
 
 	srv.AddTransport(transport.Options{})
