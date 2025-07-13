@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"pantheon-auth/graph/model"
 	"pantheon-auth/pkg/auth"
 
@@ -76,7 +77,9 @@ func (r *queryResolver) SearchImages(ctx context.Context, token string, query st
 		return nil, err
 	}
 
-	// todo: get an image from each api based on the query string, add to an array of Image, return array
+	query = url.QueryEscape(query)
+
+	// todo: make concurrent
 	// Aggregate results from multiple APIs
 	var allImages []*model.Image
 	for _, api := range r.ImageAPIs {

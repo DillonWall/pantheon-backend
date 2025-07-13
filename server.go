@@ -31,15 +31,15 @@ func main() {
 		port = defaultPort
 	}
 
-
-    unsplashClient := imageapi.NewUnsplashClient()
+	unsplashClient := imageapi.NewUnsplashClient()
+	pixabayClient := imageapi.NewPixabayClient()
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
-        UserRepo: &auth.UserRepository{
-            Users: make([]*model.User, 0),
-        },
-        ImageAPIs: []imageapi.API{unsplashClient},
-    }}))
+		UserRepo: &auth.UserRepository{
+			Users: make([]*model.User, 0),
+		},
+		ImageAPIs: []imageapi.API{unsplashClient, pixabayClient},
+	}}))
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
