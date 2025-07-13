@@ -100,7 +100,49 @@ func (r *mutationResolver) Login(ctx context.Context, input model.UserData) (*mo
 
 // Verify is the resolver for the verify field.
 func (r *mutationResolver) Verify(ctx context.Context, token string) (bool, error) {
-	panic(fmt.Errorf("not implemented: Verify - verify"))
+	// Parse the JWT token
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(os.Getenv("JWT_SECRET_KEY")), nil
+	})
+
+	if err != nil {
+		return false, fmt.Errorf("invalid token: %w", err)
+	}
+
+	if !parsedToken.Valid {
+		return false, nil
+	}
+
+	// Extract claims from the token
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return false, fmt.Errorf("invalid token claims")
+	}
+
+	// Check if the username exists in the claims
+	username, ok := claims["username"].(string)
+	if !ok || username == "" {
+		return false, fmt.Errorf("invalid username claim")
+	}
+
+	// Verify the user exists
+	var userFound bool
+	for _, u := range r.users {
+		if u.Username == username {
+			userFound = true
+			break
+		}
+	}
+
+	if !userFound {
+		return false, fmt.Errorf("user not found for the token")
+	}
+
+	return true, nil
 }
 
 // User is the resolver for the user field.
