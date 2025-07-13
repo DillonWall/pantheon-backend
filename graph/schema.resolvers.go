@@ -8,9 +8,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
+	"os"
 	"pantheon-auth/graph/model"
 	"pantheon-auth/pkg/auth"
+	"pantheon-auth/pkg/imageapi"
+	"strconv"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -77,19 +80,41 @@ func (r *queryResolver) SearchImages(ctx context.Context, token string, query st
 		return nil, err
 	}
 
-	query = url.QueryEscape(query)
-
-	// todo: make concurrent
-	// Aggregate results from multiple APIs
-	var allImages []*model.Image
-	for _, api := range r.ImageAPIs {
-		image, err := api.SearchSingleImage(ctx, query)
-		if err != nil {
-			log.Printf("Error querying %T: %v", api, err)
-			continue // Skip this API but keep others
-		}
-		allImages = append(allImages, image)
+	timeoutSec, err := strconv.Atoi(os.Getenv("IMAGE_API_TIMEOUT_SEC"))
+	if err != nil {
+		return nil, fmt.Errorf("Server environment variable error: %w", err)
 	}
+
+	// Concurrent image fetching
+	type result struct {
+		image *model.Image
+		err   error
+	}
+
+	results := make(chan result)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSec)*time.Second)
+	defer cancel()
+
+	// Launch goroutines for each API
+	for _, api := range r.ImageAPIs {
+		go func(a imageapi.API) {
+			image, err := a.SearchSingleImage(ctx, query)
+			results <- result{image, err}
+		}(api)
+	}
+
+	// Collect results
+	var allImages []*model.Image
+	numAPIs := len(r.ImageAPIs)
+	for i := 0; i < numAPIs; i++ {
+		res := <-results
+		if res.err != nil {
+			log.Printf("Error querying %T: %v", res.err, res.err)
+			continue
+		}
+		allImages = append(allImages, res.image)
+	}
+	close(results)
 
 	if len(allImages) == 0 {
 		return nil, fmt.Errorf("no images found for query: %s", query)
