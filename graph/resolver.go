@@ -1,5 +1,7 @@
 package graph
 
+//go:generate go run github.com/99designs/gqlgen generate
+
 import "pantheon-auth/graph/model"
 
 // This file will not be regenerated automatically.
