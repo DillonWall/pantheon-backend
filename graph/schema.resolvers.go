@@ -20,7 +20,10 @@ import (
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, input model.UserData) (*model.AuthResponse, error) {
-	// todo: validation
+	// Validation
+    if input.Username == "" || input.Password == "" {
+        return nil, fmt.Errorf("Username and password are required")
+    }
 	user, err := r.UserRepo.GetUser_byUsername(input.Username)
 	if user != nil {
 		return nil, fmt.Errorf("Username already taken")
@@ -43,7 +46,10 @@ func (r *mutationResolver) Register(ctx context.Context, input model.UserData) (
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, input model.UserData) (*model.AuthResponse, error) {
-	// todo: validation
+	// Validation
+    if input.Username == "" || input.Password == "" {
+        return nil, fmt.Errorf("Username and password are required")
+    }
 	user, err := r.UserRepo.GetUser_byUsername(input.Username)
 	if err != nil {
 		return nil, err
