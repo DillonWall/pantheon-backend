@@ -7,6 +7,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"log"
 	"pantheon-auth/graph/model"
 	"pantheon-auth/pkg/auth"
 
@@ -68,16 +69,30 @@ func (r *mutationResolver) Verify(ctx context.Context, token string) (bool, erro
 	return auth.ValidateToken(token, r.UserRepo)
 }
 
-// User is the resolver for the user field.
-func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
-	// todo:
-	var user *model.User
-
-	if user == nil {
-		return nil, fmt.Errorf("User not found")
+// SearchImages is the resolver for the searchImages field.
+func (r *queryResolver) SearchImages(ctx context.Context, token string, query string) ([]*model.Image, error) {
+	valid, err := auth.ValidateToken(token, r.UserRepo)
+	if !valid || err != nil {
+		return nil, err
 	}
 
-	return user, nil
+	// todo: get an image from each api based on the query string, add to an array of Image, return array
+	// Aggregate results from multiple APIs
+	var allImages []*model.Image
+	for _, api := range r.ImageAPIs {
+		image, err := api.SearchSingleImage(ctx, query)
+		if err != nil {
+			log.Printf("Error querying %T: %v", api, err)
+			continue // Skip this API but keep others
+		}
+		allImages = append(allImages, image)
+	}
+
+	if len(allImages) == 0 {
+		return nil, fmt.Errorf("no images found for query: %s", query)
+	}
+
+	return allImages, nil
 }
 
 // Mutation returns MutationResolver implementation.

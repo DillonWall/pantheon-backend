@@ -2,8 +2,24 @@
 
 package model
 
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
+)
+
 type AuthResponse struct {
 	Token *string `json:"token,omitempty"`
+}
+
+type Image struct {
+	ImageID    string      `json:"image_ID"`
+	Thumbnails string      `json:"thumbnails"`
+	Preview    string      `json:"preview"`
+	Title      string      `json:"title"`
+	Source     ImageSource `json:"source"`
+	Tags       []string    `json:"tags,omitempty"`
 }
 
 type Mutation struct {
@@ -20,4 +36,61 @@ type User struct {
 type UserData struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type ImageSource string
+
+const (
+	ImageSourceUnsplash    ImageSource = "UNSPLASH"
+	ImageSourceStoryblocks ImageSource = "STORYBLOCKS"
+	ImageSourcePixabay     ImageSource = "PIXABAY"
+)
+
+var AllImageSource = []ImageSource{
+	ImageSourceUnsplash,
+	ImageSourceStoryblocks,
+	ImageSourcePixabay,
+}
+
+func (e ImageSource) IsValid() bool {
+	switch e {
+	case ImageSourceUnsplash, ImageSourceStoryblocks, ImageSourcePixabay:
+		return true
+	}
+	return false
+}
+
+func (e ImageSource) String() string {
+	return string(e)
+}
+
+func (e *ImageSource) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ImageSource(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ImageSource", str)
+	}
+	return nil
+}
+
+func (e ImageSource) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *ImageSource) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e ImageSource) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

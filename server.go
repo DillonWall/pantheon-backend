@@ -7,6 +7,7 @@ import (
 	"pantheon-auth/graph"
 	"pantheon-auth/graph/model"
 	"pantheon-auth/pkg/auth"
+	"pantheon-auth/pkg/imageapi"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -30,10 +31,14 @@ func main() {
 		port = defaultPort
 	}
 
+
+    unsplashClient := imageapi.NewUnsplashClient()
+
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
         UserRepo: &auth.UserRepository{
             Users: make([]*model.User, 0),
         },
+        ImageAPIs: []imageapi.API{unsplashClient},
     }}))
 
 	srv.AddTransport(transport.Options{})

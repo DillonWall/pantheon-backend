@@ -1,23 +1,43 @@
+# main data types
 type User {
-  username: String!
-  passwordhash: String!
+    username: String!
+    passwordhash: String!
 }
 
+type Image {
+    image_ID: ID!
+    thumbnails: String!
+    preview: String!
+    title: String!
+    source: ImageSource!
+    tags: [String!]
+}
+
+enum ImageSource {
+    UNSPLASH
+    STORYBLOCKS
+    PIXABAY
+}
+
+##### QUERY #####
 type Query {
-  user: User!
+    searchImages(token: String!, query: String!): [Image!]!
 }
 
+##### MUTATION #####
+# inputs
 input UserData {
-  username: String!
-  password: String!
+    username: String!
+    password: String!
 }
 
+# outputs
 type AuthResponse {
-  token: String
+    token: String
 }
 
 type Mutation {
-  register(input: UserData!): AuthResponse!
-  login(input: UserData!): AuthResponse!
-  verify(token: String!): Boolean!
+    register(input: UserData!): AuthResponse!
+    login(input: UserData!): AuthResponse!
+    verify(token: String!): Boolean!
 }
