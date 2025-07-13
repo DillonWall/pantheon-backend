@@ -54,7 +54,48 @@ func (r *mutationResolver) Register(ctx context.Context, input model.UserData) (
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, input model.UserData) (*model.AuthResponse, error) {
-	panic(fmt.Errorf("not implemented: Login - login"))
+	// todo: validation
+	// todo: should use a database and instead do a query on it instead of this
+	var user *model.User
+	for _, u := range r.users {
+		if u.Username == input.Username {
+			user = u
+			break
+		}
+	}
+
+	if user == nil {
+		return nil, fmt.Errorf("User not found")
+	}
+
+	// Hash the password from the request and compare it with the stored password
+	err := bcrypt.CompareHashAndPassword(
+		[]byte(user.Passwordhash),
+		[]byte(input.Password),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid username or password: %w", err)
+	}
+
+	// Generate a JWT token
+	tokenExpireTimeHours, err := strconv.Atoi(os.Getenv("TOKEN_EXPIRE_TIME_HOURS"))
+	if err != nil {
+		return nil, fmt.Errorf("Server environment error: %w", err)
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Hour * time.Duration(tokenExpireTimeHours)).Unix(),
+	})
+
+	// Sign the token with the secret key
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to generate JWT token: %w", err)
+	}
+
+	return &model.AuthResponse{
+		Token: &tokenString,
+	}, nil
 }
 
 // Verify is the resolver for the verify field.
