@@ -7,44 +7,28 @@ package graph
 import (
 	"context"
 	"fmt"
-	"os"
 	"pantheon-auth/graph/model"
-	"strconv"
-	"time"
+	"pantheon-auth/pkg/auth"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, input model.UserData) (*model.AuthResponse, error) {
 	// todo: validation
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to hash the password: %w", err)
+	user, err := r.UserRepo.GetUser_byUsername(input.Username)
+	if user != nil {
+		return nil, fmt.Errorf("Username already taken")
 	}
 
-	user := &model.User{
-		Username:     input.Username,
-		Passwordhash: string(hashedPassword),
-	}
-	r.users = append(r.users, user)
-
-	// Generate a JWT token
-	tokenExpireTimeHours, err := strconv.Atoi(os.Getenv("TOKEN_EXPIRE_TIME_HOURS"))
+	err = r.UserRepo.CreateUser(input.Username, input.Password)
 	if err != nil {
-		return nil, fmt.Errorf("Server environment variable error: %w", err)
+		return nil, err
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": user.Username,
-		"exp":      time.Now().Add(time.Hour * time.Duration(tokenExpireTimeHours)).Unix(),
-	})
 
-	// Sign the token with the secret key
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	tokenString, err := auth.GenerateToken(input.Username)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to generate JWT token: %w", err)
+		return nil, err
 	}
 
 	return &model.AuthResponse{
@@ -55,21 +39,13 @@ func (r *mutationResolver) Register(ctx context.Context, input model.UserData) (
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, input model.UserData) (*model.AuthResponse, error) {
 	// todo: validation
-	// todo: should use a database and instead do a query on it instead of this
-	var user *model.User
-	for _, u := range r.users {
-		if u.Username == input.Username {
-			user = u
-			break
-		}
-	}
-
-	if user == nil {
-		return nil, fmt.Errorf("User not found")
+	user, err := r.UserRepo.GetUser_byUsername(input.Username)
+	if err != nil {
+		return nil, err
 	}
 
 	// Hash the password from the request and compare it with the stored password
-	err := bcrypt.CompareHashAndPassword(
+	err = bcrypt.CompareHashAndPassword(
 		[]byte(user.Passwordhash),
 		[]byte(input.Password),
 	)
@@ -77,20 +53,9 @@ func (r *mutationResolver) Login(ctx context.Context, input model.UserData) (*mo
 		return nil, fmt.Errorf("Invalid username or password: %w", err)
 	}
 
-	// Generate a JWT token
-	tokenExpireTimeHours, err := strconv.Atoi(os.Getenv("TOKEN_EXPIRE_TIME_HOURS"))
+	tokenString, err := auth.GenerateToken(input.Username)
 	if err != nil {
-		return nil, fmt.Errorf("Server environment error: %w", err)
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": user.Username,
-		"exp":      time.Now().Add(time.Hour * time.Duration(tokenExpireTimeHours)).Unix(),
-	})
-
-	// Sign the token with the secret key
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
-	if err != nil {
-		return nil, fmt.Errorf("Failed to generate JWT token: %w", err)
+		return nil, err
 	}
 
 	return &model.AuthResponse{
@@ -100,57 +65,18 @@ func (r *mutationResolver) Login(ctx context.Context, input model.UserData) (*mo
 
 // Verify is the resolver for the verify field.
 func (r *mutationResolver) Verify(ctx context.Context, token string) (bool, error) {
-	// Parse the JWT token
-	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte(os.Getenv("JWT_SECRET_KEY")), nil
-	})
-
-	if err != nil {
-		return false, fmt.Errorf("invalid token: %w", err)
-	}
-
-	if !parsedToken.Valid {
-		return false, nil
-	}
-
-	// Extract claims from the token
-	claims, ok := parsedToken.Claims.(jwt.MapClaims)
-	if !ok {
-		return false, fmt.Errorf("invalid token claims")
-	}
-
-	// Check if the username exists in the claims
-	username, ok := claims["username"].(string)
-	if !ok || username == "" {
-		return false, fmt.Errorf("invalid username claim")
-	}
-
-	// Verify the user exists
-	var userFound bool
-	for _, u := range r.users {
-		if u.Username == username {
-			userFound = true
-			break
-		}
-	}
-
-	if !userFound {
-		return false, fmt.Errorf("user not found for the token")
-	}
-
-	return true, nil
+	return auth.ValidateToken(token, r.UserRepo)
 }
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
-	user := &model.User{
-		Username:     "exampleuser",
-		Passwordhash: "hashedpassword",
+	// todo:
+	var user *model.User
+
+	if user == nil {
+		return nil, fmt.Errorf("User not found")
 	}
+
 	return user, nil
 }
 
