@@ -1,0 +1,89 @@
+query search_cat {
+  searchImages(
+    # token: "",
+    token: "REPLACEME",
+  	query: "cat"
+  ) {
+    image_ID,
+    title,
+    thumbnails,
+    preview,
+    source,
+    tags
+  }
+}
+
+query search_flowers {
+  searchImages(
+    # token: "",
+    token: "REPLACEME",
+  	query: "yellow flower"
+  ) {
+    image_ID,
+    title,
+    thumbnails,
+    preview,
+    source,
+    tags
+  }
+}
+
+query search_random {
+  searchImages(
+    # token: "",
+    token: "REPLACEME",
+  	query: "asdlikfhoiauwhefoliuzhsdlfuhaleifuhlasuhflasehf"
+  ) {
+    image_ID,
+    title,
+    thumbnails,
+    preview,
+    source,
+    tags
+  }
+}
+
+mutation register_success {
+  register(input: {
+    username: "newuser",
+    password: "strongpassword"
+  }) {
+    token
+  }
+}
+
+mutation login_success {
+  login(input: {
+    username: "newuser",
+    password: "strongpassword"
+  }) {
+    token
+  }
+}
+
+mutation login_wrong_password {
+  login(input: {
+    username: "newuser",
+    password: "wrongpassword"
+  }) {
+    token
+  }
+}
+
+mutation login_wrong_user {
+  login(input: {
+    username: "wronguser",
+    password: "strongpassword"
+  }) {
+    token
+  }
+}
+
+mutation verify_success {
+  # verify(token: "")
+  verify(token: "REPLACEME")
+}
+
+mutation verify_fail {
+  verify(token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTIzOTg1NjUsInVzZXJuYW1lIjoibmV3dXNlciJ9.VVnwkBSZzvLDQW33cwiWCmPDunOIqCnJuZcHZhntzKg_")
+}
