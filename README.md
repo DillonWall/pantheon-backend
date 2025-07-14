@@ -3,13 +3,19 @@ A robust GraphQL backend for user authentication and multi-source image search, 
 
 
 ## Features
-✅ User Authentication (Register/Login with JWT)  
-✅ Token Verification  
 ✅ Concurrent Image Search from Multiple APIs  
 ✅ Secure Password Storage (bcrypt hashing)  
 ✅ Configurable Timeouts via Environment Variables  
 ✅ GraphQL Playground for Interactive Testing  
+### Optional Tasks
+✅ [Level: Intermediate] Implement an authentication feature with Registration, Login, and token-based access control for the image API (only registered users with valid tokens can access the API).   
+✅ [Level: Hard] Use GraphQL instead of REST for the web services layer.   
+✅ [Level: Challenging] Build and package the application as a Docker image via a CI/CD pipeline (e.g., GitHub Actions).   
+❌ [Level: Very Challenging] Create proper infrastructure and deploy the application to a cloud provider (e.g., AWS, Google Cloud, Azure) with documentation on the implementation process.   
+❌ [Level: Insane] Optimize the application to handle high traffic (> 1000 requests/second) without performance degradation, including load test methods and results.   
 
+#### Note:
+To achieve the last 2 optional tasks, I originally planned to use AWS Lambda functions and DynamoDB to host the api and deploy automatically with Serverless. However, it seems no one has really done this before and it would take too long to get working for the scope of this assignment :( . I did tinker with this a bit and got somewhat close, so please let me know if you want to see the code for that.
 
 ## Prerequisites
 - Go v1.24.5 or equivalent installed (https://golang.org/doc/install)  
